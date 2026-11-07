@@ -466,6 +466,8 @@ def run_claude(prompt, cwd, model, env):
                    error_status=d.get("api_error_status"))
         if d.get("is_error"):
             out["error_message"] = d.get("result", "")
+        if openmathos.is_gateway(env):  # Mei fork: the gateway names the model that answered
+            out["served_model"] = openmathos.served_model(r.stdout.splitlines())
     except Exception as e:
         # NOT the raw stream. Under stream-json its tail is whatever events came last, which
         # includes tool_result blocks — the files the reviewer read. raw_stdout is stripped from

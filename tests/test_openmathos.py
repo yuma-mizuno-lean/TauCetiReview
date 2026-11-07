@@ -76,5 +76,30 @@ finally:
         if v is not None:
             os.environ[k] = v
 
+# The display label is the model the gateway reported, never a hand-kept name table.
+import json as _json  # noqa: E402
+stream = [_json.dumps({"type": "assistant", "message": {"model": "moonshotai/kimi-k3.1-pro"}}),
+          "not json", _json.dumps({"type": "result", "result": "ok"})]
+check(openmathos.served_model(stream) == "moonshotai/kimi-k3.1-pro", "served model from the stream")
+check(openmathos.served_model([_json.dumps({"type": "assistant", "message": {"model": "a`b"}})]) is None,
+      "unsafe model text is not rendered")
+check(openmathos.served_model([_json.dumps({"type": "assistant", "message": {"model": "a"}}),
+                               _json.dumps({"type": "assistant", "message": {"model": "b"}})]) is None,
+      "disagreeing events give no label")
+check(openmathos.judge_label({"provider": "openmathos", "model": openmathos.MODEL,
+                              "served_model": "moonshotai/kimi-k3.1-pro"}) == "openmathos/moonshotai/kimi-k3.1-pro",
+      "label uses the served model")
+check(openmathos.judge_label({"provider": "claude", "model": "claude-opus-5-5"}) == "claude/claude-opus-5-5",
+      "other labels unchanged")
+check(openmathos.is_gateway({"ANTHROPIC_BASE_URL": openmathos.BASE_URL}) and not openmathos.is_gateway({}),
+      "gateway detection")
+import casefile  # noqa: E402
+sm = {}
+casefile.update_case_file(sm, "naming", {"provider": "openmathos", "model": openmathos.MODEL,
+                                         "served_model": "moonshotai/kimi-k3.1-pro"}, "abc")
+check(sm["naming"].get("served_model") == "moonshotai/kimi-k3.1-pro", "case file keeps the served model")
+casefile.update_case_file(sm, "naming", {"provider": "claude", "model": "claude-opus-5-5"}, "abd")
+check("served_model" not in sm["naming"], "a later non-gateway run clears it")
+
 print("openmathos reviewer:", "OK" if not fails else f"{fails} failure(s)")
 sys.exit(1 if fails else 0)

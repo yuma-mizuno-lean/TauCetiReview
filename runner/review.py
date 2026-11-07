@@ -422,6 +422,7 @@ def run_rubric(ctx, rubric):
         [a.repo, str(a.pr), head, rubric, model, rubrics_version, started_at]
     ).encode()).hexdigest()[:6]
     res.update(provider=provider, model=model, rubric=rubric,
+               served_model=res.get("served_model"),  # Mei fork: openmathos only
                run_id=(f"r-{started_at.translate(str.maketrans('', '', '-:'))}"
                        f"-{a.pr}-{rubric}-{rid}"),
                started_at=started_at, duration_s=round(time.monotonic() - t0, 1),

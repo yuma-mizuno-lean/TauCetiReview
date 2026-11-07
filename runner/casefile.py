@@ -109,6 +109,10 @@ def update_case_file(state_map, rubric, res, head_sha, digest=None, rubrics_vers
     v = res.get("verdict_obj") or {}
     verdict = v.get("verdict") or "error"
     cf = state_map.setdefault(rubric, {})
+    if res.get("served_model"):  # Mei fork: the model a gateway reported (openmathos)
+        cf["served_model"] = res["served_model"]
+    else:
+        cf.pop("served_model", None)
     cf.update(rubric=rubric, provider=res.get("provider"), model=res.get("model"),
               verdict=verdict,
               summary=v.get("summary", ""), findings=v.get("findings") or [],
