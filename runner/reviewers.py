@@ -10,6 +10,10 @@ if __package__:
     from .pricing import OPENROUTER_MODELS, rates
 else:
     from pricing import OPENROUTER_MODELS, rates
+try:  # Mei fork
+    from . import openmathos
+except ImportError:
+    import openmathos
 
 
 # A pi reviewer's tools: read + grep + ls only — never bash/edit/write. This keeps the review
@@ -184,6 +188,8 @@ def reviewer_env(provider, keys, subscription=False):
             src = _kiro_auth_db()
             if src.exists():
                 _copy_kiro_auth_db(src, _kiro_data_dir(home) / "data.sqlite3")
+    elif provider == openmathos.PROVIDER:  # Mei fork: always a key, in both auth modes
+        openmathos.reviewer_env(env, keys.get("openmathos", ""))
     elif provider in OPENROUTER_MODELS:
         # OpenRouter via pi: there is no subscription/OAuth concept — it is always an API
         # key, in both auth modes. The clean HOME carries ONLY this key, so a prompt-injected

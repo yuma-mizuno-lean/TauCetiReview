@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from ledger import Ledger
 from handoff import (DEFAULT_RUBRICS, can_reuse_completed_review, has_unhandled_contest,
                      thread_action_rubrics)
+import openmathos  # Mei fork
 from pricing import CLAUDE_MODEL, CODEX_FALLBACK_MODEL, CODEX_MODEL, KIRO_MODEL, OPENROUTER_MODELS, PRICES_SHA, SONNET_MODEL, sum_usage, warn_unpriced
 # Re-exported for merge_from_scoreboard (changed_paths/decide_merge/DEFAULT_RUBRICS) and the price
 # tests, which read these as review.X — kept importable here though review.py no longer uses them.
@@ -744,6 +745,7 @@ def main():
     # logins there, but DeepSeek/MiniMax still need OPENROUTER_API_KEY).
     if not keys.get("openrouter"):
         keys["openrouter"] = os.environ.get("OPENROUTER_API_KEY", "")
+    keys["openmathos"] = openmathos.api_key()  # Mei fork: always a key, like OpenRouter
 
     store = pathlib.Path(a.store)
     ledger_path = store / "ledger.json"
@@ -1005,7 +1007,9 @@ def main():
                "kiro": (run_kiro, a.kiro_model),
                # sonnet is the same claude CLI runner pinned to Sonnet — a cheaper claude-family
                # A/B arm, selected explicitly (never auto-drawn) via --reviewer sonnet.
-               "sonnet": (run_claude, SONNET_MODEL)}
+               "sonnet": (run_claude, SONNET_MODEL),
+               # Mei fork: the claude CLI against the Open Math OS gateway; see openmathos.py.
+               openmathos.PROVIDER: (run_claude, openmathos.MODEL)}
     # Every OpenRouter model is the same run_pi runner, differing only by model id.
     for name, mid in OPENROUTER_MODELS.items():
         runners[name] = (run_pi, mid)

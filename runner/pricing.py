@@ -200,7 +200,7 @@ def usage_totals(provider, usage):
     inp = count("input_tokens")
     cached = count("cache_read_input_tokens") if "cache_read_input_tokens" in usage else count("cached_input_tokens")
     written = count("cache_creation_input_tokens") if "cache_creation_input_tokens" in usage else count("cache_write_input_tokens")
-    separate = (provider in {"claude", "sonnet"} or provider in OPENROUTER_MODELS
+    separate = (provider in {"claude", "sonnet", "openmathos"} or provider in OPENROUTER_MODELS
                 or "cache_read_input_tokens" in usage or "cache_creation_input_tokens" in usage)
     total = inp + cached + written if separate else inp
     fresh = inp if separate else max(0, inp - cached - written)

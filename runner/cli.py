@@ -621,7 +621,7 @@ def _main(cleanup):
                          "(default: dry run — print the review, post nothing)")
     ap.add_argument("--reviewer", default="",
                     help="restrict to these reviewers (comma-separated: claude, codex, kiro, sonnet, "
-                         "deepseek, minimax, grok). sonnet is the claude CLI pinned to Sonnet; "
+                         "deepseek, minimax, grok, openmathos). sonnet is the claude CLI pinned to Sonnet; "
                          "deepseek/minimax/grok run an OpenRouter model through the `pi` agent and "
                          "need `pi` on PATH + OPENROUTER_API_KEY. sonnet/deepseek/minimax/grok are "
                          "kiro uses an exact --kiro-model and is explicit-only (never auto-drawn). "
@@ -764,6 +764,16 @@ def _main(cleanup):
     # (the budget gate: no auto-dispatch), and then only if `pi` and OPENROUTER_API_KEY are present.
     if shutil.which("pi") and os.environ.get("OPENROUTER_API_KEY"):
         avail += [p for p in ("deepseek", "minimax", "grok") if p in want and p not in avail]
+    # Mei fork: Open Math OS (the claude CLI against its gateway) is pay-per-token and joins only
+    # when named, with `claude` on PATH and an Open Math OS key; see runner/openmathos.py.
+    if "openmathos" in want and shutil.which("claude") and "openmathos" not in avail:
+        try:
+            from . import openmathos
+        except ImportError:
+            import openmathos
+
+        if openmathos.api_key():
+            avail.append("openmathos")
     if not avail:
         if a.auth == "subscription":
             die("need at least one of `claude` / `codex` on PATH (and logged in), an explicit "
