@@ -10,9 +10,9 @@ if __package__:
     from .pricing import OPENROUTER_MODELS, rates
 else:
     from pricing import OPENROUTER_MODELS, rates
-try:  # Mei fork
+if __package__:  # Mei fork
     from . import openmathos
-except ImportError:
+else:
     import openmathos
 
 

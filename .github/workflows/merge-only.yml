@@ -17,6 +17,7 @@ on:
   workflow_call:
     inputs:
       tools_repository: {required: false, type: string, default: TauCetiProject/TauCetiTools}
+      review_repository: {required: false, type: string, default: TauCetiProject/TauCetiReview}
       tools_ref: {required: false, type: string, default: ""}
       pr: { required: true, type: string }
       review_ref:
@@ -57,7 +58,7 @@ jobs:
       - name: Checkout review repo (runner + rubrics)
         uses: actions/checkout@v4
         with:
-          repository: TauCetiProject/TauCetiReview
+          repository: ${{ inputs.review_repository }}
           # The explicit full commit SHA pinned by the caller.
           ref: ${{ inputs.review_ref }}
           persist-credentials: false

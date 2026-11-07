@@ -5,7 +5,6 @@ Run as a script (runner/ on sys.path), so imports are flat siblings, not package
 import datetime, hashlib, json, pathlib, re
 
 import reviewers
-import openmathos  # Mei fork: judge labels
 from pricing import fmt_tok, usage_totals
 from verdict import newest_reply_id, state_of
 
@@ -114,7 +113,7 @@ def render_thread(cf, prov=None):
     v = cf.get("verdict", "error")
     lines = [f"<!--tauceti-rubric:{cf['rubric']}-->",
              f"### {emoji.get(v, '•')} {cf['rubric']} — {v}  "
-             f"`{openmathos.judge_label(cf)}`", "", sanitize(cf.get("summary", "")), ""]
+             f"`{cf.get('provider')}/{cf.get('served_model') or cf.get('model')}`", "", sanitize(cf.get("summary", "")), ""]
     for f in (cf.get("findings") or []):
         loc = sanitize((f.get("file") or "") + (f":{f['line']}" if f.get("line") else ""), 300)
         lines.append(f"- {('`' + loc + '` — ') if loc else ''}{sanitize(f.get('issue', ''))}"
@@ -124,7 +123,7 @@ def render_thread(cf, prov=None):
     lines.append("\nReply in this thread to contest a finding; that re-runs **only** this rubric and "
                  "posts an answer here. (To fix it, just push a commit — that re-reviews on its own. "
                  "To contest again after an answer, post a NEW reply rather than editing an old one.)")
-    sub = [f"`{openmathos.judge_label(cf)}`"]
+    sub = [f"`{cf.get('provider')}/{cf.get('served_model') or cf.get('model')}`"]
     if cf.get("duration_s"):
         sub.append(f"{cf['duration_s']:.0f}s")
     u = usage_totals(cf.get("provider"), cf.get("usage"))
@@ -156,7 +155,7 @@ def render_contest_reply(cf, head_sha, prov=None, answered_id=None):
     contest twice (and a later reply, with a higher id, is answered as a fresh contest)."""
     rubric = cf.get("rubric", "")
     aid = answered_id if answered_id is not None else newest_reply_id(cf)
-    judge = f"{openmathos.judge_label(cf)}" if cf.get("provider") else "—"
+    judge = f"{cf.get('provider')}/{cf.get('served_model') or cf.get('model')}" if cf.get("provider") else "—"
     if state_of(cf, head_sha) == "green":
         verdict = f"this clears the finding ✅ — approved on `{head_sha[:7]}`."
     else:
@@ -196,7 +195,7 @@ def render_scoreboard(candidates, state_map, head_sha, overall, budget_note, cos
     for r in candidates:
         cf = state_map.get(r) or {}
         s = states[r]
-        judge = f"{openmathos.judge_label(cf)}" if cf.get("provider") else "—"
+        judge = f"{cf.get('provider')}/{cf.get('served_model') or cf.get('model')}" if cf.get("provider") else "—"
         summ = sanitize(cf.get("summary") or "").replace("\n", " ").replace("|", "\\|")
         if not cf.get("verdict") and published_board:
             summ = "Retained from the published review of this head."

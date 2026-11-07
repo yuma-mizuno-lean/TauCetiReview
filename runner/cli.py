@@ -42,6 +42,10 @@ try:
     from . import pr_diff as repository_diff
 except ImportError:
     import pr_diff as repository_diff
+try:  # Mei fork
+    from . import openmathos
+except ImportError:
+    import openmathos
 
 # review.py's abort status when the provider itself is unusable. Duplicated rather than imported:
 # this CLI drives the engine as a subprocess and never imports it (the engine's modules use flat
@@ -633,6 +637,8 @@ def _main(cleanup):
                          "runner/prices.json (e.g. claude-fable-5-1)")
     ap.add_argument("--kiro-model", default="gpt-5.6-sol",
                     help="exact Kiro model (default: gpt-5.6-sol; e.g. claude-opus-5)")
+    ap.add_argument("--openmathos-model", default="",  # Mei fork
+                    help="exact Open Math OS gateway model id; required with --reviewer openmathos")
     ap.add_argument("--no-mathlib", action="store_true",
                     help="skip fetching the pinned Mathlib source (faster; reuse checks weaker)")
     ap.add_argument("--roadmap-dir", default="",
@@ -765,15 +771,12 @@ def _main(cleanup):
     if shutil.which("pi") and os.environ.get("OPENROUTER_API_KEY"):
         avail += [p for p in ("deepseek", "minimax", "grok") if p in want and p not in avail]
     # Mei fork: Open Math OS (the claude CLI against its gateway) is pay-per-token and joins only
-    # when named, with `claude` on PATH and an Open Math OS key; see runner/openmathos.py.
-    if "openmathos" in want and shutil.which("claude") and "openmathos" not in avail:
-        try:
-            from . import openmathos
-        except ImportError:
-            import openmathos
-
-        if openmathos.api_key():
-            avail.append("openmathos")
+    # when named, with `claude` on PATH and OPENMATHOS_API_KEY; see runner/openmathos.py.
+    if (openmathos.PROVIDER in want and shutil.which("claude") and os.environ.get(openmathos.KEY_ENV)
+            and openmathos.PROVIDER not in avail):
+        if not a.openmathos_model:
+            die("--reviewer openmathos needs --openmathos-model <exact gateway model id>.")
+        avail.append(openmathos.PROVIDER)
     if not avail:
         if a.auth == "subscription":
             die("need at least one of `claude` / `codex` on PATH (and logged in), an explicit "
@@ -1008,6 +1011,8 @@ def _main(cleanup):
            "--replies-json", str(replies_path), "--prior-scoreboard-json", str(prior_board_path)]
     if a.claude_model:
         cmd += ["--claude-model", a.claude_model]
+    if a.openmathos_model:  # Mei fork
+        cmd += ["--openmathos-model", a.openmathos_model]
     if a.rubrics:
         cmd += ["--rubrics", a.rubrics]
     print("\n=== running review (this calls claude/codex per rubric; takes a few minutes) ===\n",

@@ -654,6 +654,8 @@ def main():
                          "used as chosen.")
     ap.add_argument("--kiro-model", default=KIRO_MODEL,
                     help=f"exact Kiro reviewer model (default: {KIRO_MODEL}); Kiro is explicit-only")
+    ap.add_argument("--openmathos-model", default="",  # Mei fork
+                    help="exact Open Math OS gateway model id; required for the openmathos reviewer")
     ap.add_argument("--providers", default="claude,codex",
                     help="comma-separated reviewers to draw from: claude, codex, and any "
                          "Kiro (explicit-only), and any OpenRouter model in OPENROUTER_MODELS "
@@ -705,6 +707,8 @@ def main():
         reject_retired_opus(a.claude_model)
     except ValueError as e:
         sys.exit(str(e))
+    if openmathos.PROVIDER in a.providers.split(",") and not a.openmathos_model.strip():  # Mei fork
+        sys.exit("--openmathos-model is required for the openmathos reviewer")
 
     # Reclaim reviewer HOMEs orphaned by an earlier killed/crashed run before we add more. Each
     # worker has its own HOME, so this base isn't shared, and a worker runs reviews sequentially —
@@ -746,7 +750,7 @@ def main():
     # logins there, but DeepSeek/MiniMax still need OPENROUTER_API_KEY).
     if not keys.get("openrouter"):
         keys["openrouter"] = os.environ.get("OPENROUTER_API_KEY", "")
-    keys["openmathos"] = openmathos.api_key()  # Mei fork: always a key, like OpenRouter
+    keys["openmathos"] = os.environ.get(openmathos.KEY_ENV, "")  # Mei fork: always a key, like OpenRouter
 
     store = pathlib.Path(a.store)
     ledger_path = store / "ledger.json"
@@ -1010,7 +1014,7 @@ def main():
                # A/B arm, selected explicitly (never auto-drawn) via --reviewer sonnet.
                "sonnet": (run_claude, SONNET_MODEL),
                # Mei fork: the claude CLI against the Open Math OS gateway; see openmathos.py.
-               openmathos.PROVIDER: (run_claude, openmathos.MODEL)}
+               openmathos.PROVIDER: (run_claude, a.openmathos_model)}
     # Every OpenRouter model is the same run_pi runner, differing only by model id.
     for name, mid in OPENROUTER_MODELS.items():
         runners[name] = (run_pi, mid)

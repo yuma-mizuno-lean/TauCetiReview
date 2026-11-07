@@ -16,6 +16,7 @@ on:
   workflow_call:
     inputs:
       tools_repository: {required: false, type: string, default: TauCetiProject/TauCetiTools}
+      review_repository: {required: false, type: string, default: TauCetiProject/TauCetiReview}
       tools_ref: {required: false, type: string, default: ""}
       dry_run:
         description: "List actions without enqueuing / updating / flagging"
@@ -56,7 +57,7 @@ jobs:
       - name: Checkout review repo (runner)
         uses: actions/checkout@v4
         with:
-          repository: TauCetiProject/TauCetiReview
+          repository: ${{ inputs.review_repository }}
           # The explicit full commit SHA pinned by the caller.
           ref: ${{ inputs.review_ref }}
           persist-credentials: false
